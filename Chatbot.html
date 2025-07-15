@@ -2,69 +2,85 @@
 <html>
   <head>
     <title>Chatbot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .chat-container {
+        max-width: 500px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 24px;
+      }
+      .chat-header {
+        font-size: 1.5em;
+        font-weight: bold;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
-    <div class="js-container"></div>
+    <div class="chat-container">
+      <div class="chat-header">Simple Chatbot</div>
+      <div class="js-container"></div>
+    </div>
 
     <script src="https://unpkg.com/supersimpledev/react.js"></script>
     <script src="https://unpkg.com/supersimpledev/react-dom.js"></script>
-
     <script src="https://unpkg.com/supersimpledev/babel.js"></script>
     <script type="text/babel">
-      function ChatInput() {
-        return (
-          <>
-            <input placeholder="Send a message..." size="30" />
-            <button>Send</button>
-          </>
-        );
-      }
+      import React, { useState } from "react";
 
-      //function ChatMessage(props) { this is the original way to define a function component
       function ChatMessage({ message, sender }) {
-        // const message = props.message;
-        // const sender = props.sender;
-        // const { message, sender } = props; shortcut for the codes above
-        /*
-        if (sender === "robot") {
-          return (
-            <div>
-              <img
-                src="images/robot.jpg"
-                alt="robot.jpg"
-                width="50"
-                style={{
-                  borderRadius: "50%",
-                  maxHeight: "50px",
-                }}
-              />
-              {message}
-            </div>
-          );
-        } */
-
         return (
-          <div>
+          <div
+            style={{
+              margin: "10px 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: sender === "user" ? "flex-end" : "flex-start",
+            }}
+          >
             {sender === "robot" && (
               <img
-                src="images/robot.jpg"
-                alt="robot.jpg"
-                width="50"
+                src="/images/robot.jpg"
+                alt="Robot"
+                width="40"
                 style={{
                   borderRadius: "50%",
-                  maxHeight: "50px",
+                  maxHeight: "40px",
+                  marginRight: "10px",
                 }}
               />
             )}
-            {message}
+            <span
+              style={{
+                background: sender === "robot" ? "#e0e0e0" : "#cce5ff",
+                padding: "8px 14px",
+                borderRadius: "18px",
+                marginRight: sender === "robot" ? "10px" : "0",
+                marginLeft: sender === "user" ? "10px" : "0",
+                maxWidth: "70%",
+                wordBreak: "break-word",
+              }}
+            >
+              {message}
+            </span>
             {sender === "user" && (
               <img
-                src="images/user.jpg"
-                alt="User.jpg"
-                width="50"
+                src="/images/user.jpg"
+                alt="User"
+                width="40"
                 style={{
                   borderRadius: "50%",
-                  maxHeight: "50px",
+                  maxHeight: "40px",
+                  marginLeft: "10px",
                 }}
               />
             )}
@@ -72,14 +88,152 @@
         );
       }
 
+      function ChatInput({ onSend }) {
+        const [input, setInput] = useState("");
+        return (
+          <form
+            style={{ margin: "20px 0", display: "flex", gap: "8px" }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (input.trim()) {
+                onSend(input);
+                setInput("");
+              }
+            }}
+          >
+            <input
+              placeholder="Send a message..."
+              size="30"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              style={{
+                flex: 1,
+                padding: "8px",
+                borderRadius: "6px",
+                border: "1px solid #ccc",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#007bff",
+                color: "#fff",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Send
+            </button>
+          </form>
+        );
+      }
+
       function App() {
+        const facts = [
+          "Did you know? Honey never spoils. Archaeologists have found edible honey in ancient Egyptian tombs!",
+          "The Eiffel Tower can be 15 cm taller during hot days due to thermal expansion of the metal.",
+          "Octopuses have three hearts and blue blood. Two pump blood to the gills, one to the rest of the body.",
+        ];
+
+        const [messages, setMessages] = useState([]);
+        const [shownFacts, setShownFacts] = useState([]);
+
+        function getBotReply(userMsg) {
+          const msg = userMsg.toLowerCase();
+
+          // What can you do?
+          if (msg.includes("what can you do")) {
+            return "I can roll a dice, flip a coin, tell today's date, tell the current time, or give you a random information!";
+          }
+
+          // Roll a dice
+          if (msg.includes("roll") && msg.includes("dice")) {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            return `You rolled a ${roll}!`;
+          }
+
+          // Flip a coin
+          if (msg.includes("flip") && msg.includes("coin")) {
+            const coin = Math.random() < 0.5 ? "Heads" : "Tails";
+            return `It's ${coin}!`;
+          }
+
+          // Give me a random information or next/other information
+          if (msg.includes("information")) {
+            let availableIndexes = facts
+              .map((_, i) => i)
+              .filter((i) => !shownFacts.includes(i));
+            // If all facts have been shown, reset and start over
+            if (availableIndexes.length === 0) {
+              // Reset shownFacts and pick a new random fact
+              const randomIndex = Math.floor(Math.random() * facts.length);
+              setShownFacts([randomIndex]);
+              return facts[randomIndex];
+            }
+            const randomIndex =
+              availableIndexes[
+                Math.floor(Math.random() * availableIndexes.length)
+              ];
+            setShownFacts((prev) => [...prev, randomIndex]);
+            return facts[randomIndex];
+          }
+
+          // Today's date
+          if (msg.includes("date")) {
+            const today = new Date();
+            const dateStr = today.toLocaleDateString();
+            return `Today's date is ${dateStr}.`;
+          }
+
+          // Current time
+          if (msg.includes("time")) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            return `The current time is ${timeStr}.`;
+          }
+
+          // Greetings
+          if (msg.includes("hello") || msg.includes("hi")) {
+            return "Hi, how can I help?";
+          }
+          if (msg.includes("name")) {
+            return "I'm your friendly chatbot!";
+          }
+          if (msg.includes("help")) {
+            return "You can ask me to roll a dice, flip a coin, tell today's date, tell the current time, or give you a random information!";
+          }
+          if (msg.includes("bye")) {
+            return "Goodbye! Have a great day!";
+          }
+          return "Sorry, I didn't understand that.";
+        }
+
+        function handleSend(userMsg) {
+          setMessages((prev) => [
+            ...prev,
+            { message: userMsg, sender: "user" },
+            { message: getBotReply(userMsg), sender: "robot" },
+          ]);
+        }
+
         return (
           <>
-            <ChatInput />
-            <ChatMessage message="hello" sender="user" />
-            <ChatMessage message="Hi, how can I help?" sender="robot" />
-            <ChatMessage message="can you get me today's date?" sender="user" />
-            <ChatMessage message="Today is July 16" sender="robot" />
+            <ChatInput onSend={handleSend} />
+            <div style={{ minHeight: "200px" }}>
+              {messages.map((msg, i) => (
+                <ChatMessage
+                  key={i}
+                  message={msg.message}
+                  sender={msg.sender}
+                />
+              ))}
+            </div>
           </>
         );
       }
